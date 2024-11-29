@@ -1,0 +1,15 @@
+<div style="margin: auto; display: flex; justify-content: center">
+  <form [formGroup]="formGroup" style="display: flex; flex-direction: column; width: 400px; gap: 12px; border: 1px solid black; padding: 10px">
+    <input [formControl]="formGroup.controls.name">
+    <input [formControl]="formGroup.controls.profession">
+    <button>Search</button>
+  </form>
+  <table>
+    <tr>
+      <th>Name</th>
+      <th>Profession</th>
+      <th>Languages</th>
+      <th>Available</th>
+    </tr>
+  </table>
+</div>
