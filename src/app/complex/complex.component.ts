@@ -1,12 +1,25 @@
 import {Component, OnInit, signal} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule} from "@angular/forms";
-import {BehaviorSubject, combineLatestWith, delay, map, Observable, of, Subject, switchMap} from "rxjs";
+import {
+  BehaviorSubject,
+  combineLatestWith,
+  delay,
+  map,
+  Observable,
+  of,
+  startWith,
+  Subject,
+  switchMap,
+  withLatestFrom
+} from "rxjs";
+import {AsyncPipe} from "@angular/common";
 
 @Component({
   selector: 'app-complex',
   standalone: true,
   imports: [
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    AsyncPipe
   ],
   templateUrl: './complex.component.html',
   styleUrl: './complex.component.scss'
@@ -14,18 +27,19 @@ import {BehaviorSubject, combineLatestWith, delay, map, Observable, of, Subject,
 export class ComplexComponent implements OnInit {
 
   searchName = signal('');
+  tableData$?: Observable<TestData[]>;
 
   ngOnInit(): void {
 
-    let observableChain = this.sortOrder.pipe(
+    this.tableData$ = this.sortOrder.pipe(
       combineLatestWith(this.header),
       combineLatestWith(this.searchButton$),
-      switchMap(x => {
-        return this.fakeAsyncronousDataSource(this.searchName(), x[0][1], x[0][0], 0)
-      })
+      withLatestFrom(this.formGroup.valueChanges),
+      switchMap(([[[sort, header], _], formData]) => {
+        return this.fakeAsyncronousDataSource(formData.name ?? '', formData.profession ?? '', header, sort, 0)
+      }),
+      startWith(testData.slice(0, 10))
     )
-
-    // throw new Error('Method not implemented.');
   }
 
   formData$?: Observable<PagedResult>;
@@ -35,34 +49,43 @@ export class ComplexComponent implements OnInit {
     profession: new FormControl<string>('')
   });
 
-  sortOrder = new BehaviorSubject<string>('');
-  header = new BehaviorSubject<Header | undefined>(undefined);
+  sortOrder = new BehaviorSubject<SortOrder>(SortOrder.Ascending);
+  header = new BehaviorSubject<Header | undefined>(Header.Name);
   searchButton$ = new Subject<void>();
-  page = new BehaviorSubject<number>(0);
+
+  // nameSort = BehaviorSubject<SortOrder>(SortOrder.Ascending);
 
   search() {
     this.searchButton$.next();
   }
 
-  fakeAsyncronousDataSource(name: string, header: Header | undefined, sortOrder: SortOrder, page: number) {
+  sortName() {
+    // debugger;
+    this.sortOrder.next(this.sortOrder.value == SortOrder.Ascending ? SortOrder.Descending : SortOrder.Ascending);
+  }
+
+  fakeAsyncronousDataSource(name: string, profession: string, header: Header | undefined, sortOrder: SortOrder, page: number) {
     return of(
       testData
-    ).pipe(delay(2000),
+    ).pipe(delay(0),
       map(data => {
+        debugger;
         // Filter the data by name and header
         let filteredData = data.filter(item =>
-          (!name || item.name.includes(name))
+          ((!item.name) || (item.name.toLowerCase().indexOf(name.toLowerCase()) > -1)) &&
+          ((!item.profession) || item.profession.toLowerCase().indexOf(profession.toLowerCase()) > -1)
         );
-
+        debugger;
         // Sort the data based on the sortOrder
         if (sortOrder) {
           header ??= Header.Name;
+          debugger;
           // header = header!;
           filteredData = filteredData.sort((a, b) => {
-            if (a[header] < b[header]) {
+            if (a[header!] < b[header!]) {
               return sortOrder === SortOrder.Ascending ? -1 : 1;
             }
-            if (a[header] > b[header]) {
+            if (a[header!] > b[header!]) {
               return sortOrder === SortOrder.Descending ? 1 : -1;
             }
             return 0;
@@ -71,12 +94,11 @@ export class ComplexComponent implements OnInit {
 
         // Optionally, implement pagination if needed
         const pageSize = 10; // Adjust this to your needs
-        const start = (page - 1) * pageSize;
+        const start = (page) * pageSize;
         const end = start + pageSize;
         return filteredData.slice(start, end);
       }))
   }
-
 }
 
 export interface PagedResult {
@@ -97,7 +119,7 @@ export enum SortOrder {
   Descending = 'descending'
 }
 
-export enum Header{
+export enum Header {
   Name = 'name',
   Profession = 'profession',
   Languages = 'languages',

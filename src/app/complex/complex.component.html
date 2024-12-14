@@ -1,15 +1,29 @@
-<div style="margin: auto; display: flex; justify-content: center">
-  <form [formGroup]="formGroup" style="display: flex; flex-direction: column; width: 400px; gap: 12px; border: 1px solid black; padding: 10px">
-    <input [formControl]="formGroup.controls.name">
-    <input [formControl]="formGroup.controls.profession">
-    <button>Search</button>
+<div
+  style="margin: auto; display: flex; justify-content: center; flex-direction: column; gap: 12px; justify-items: center; align-items: center;">
+  <form [formGroup]="formGroup"
+        style="display: flex; flex-direction: column; width: 400px; gap: 12px; border: 1px solid black; padding: 10px">
+    <input [formControl]="formGroup.controls.name" placeholder="Name">
+    <input [formControl]="formGroup.controls.profession" placeholder="Profession">
+    <button (click)="search()">Search</button>
   </form>
-  <table>
+  <table style="width: 600px; border: 1px solid black">
+    <tr style="text-align: center;">
+      <button (click)="sortName()">Sort</button>
+    </tr>
     <tr>
       <th>Name</th>
       <th>Profession</th>
       <th>Languages</th>
       <th>Available</th>
     </tr>
+    <!--    <tr>-->
+    @for (row of tableData$ | async; track $index) {
+      <tr>
+        <td>{{ row.name }}</td>
+        <td>{{ row.profession }}</td>
+        <td>{{ row.languages }}</td>
+        <td>{{ row.available }}</td>
+      </tr>
+    }
   </table>
 </div>
